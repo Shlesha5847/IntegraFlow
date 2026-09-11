@@ -54,7 +54,7 @@ A multi-protocol workflow orchestration engine that automates employee onboardin
 
 ##  Why This Project Stands Out
 
-> Most student projects are basic CRUD applications that interact with a single database. **IntegraFlow solves a real-world enterprise integration problem.**
+
 
 - **Multi-Protocol Integration (REST + SOAP):** Real enterprise environments are hybrid. IntegraFlow connects modern REST APIs with legacy SOAP/WSDL services using custom adapters and strict schema contracts.
 - **Workflow State Machine (Not Just Endpoints):** Implements a resilient step-execution engine that manages state transitions, step dependencies, and lifecycle events across distributed boundaries.
