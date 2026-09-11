@@ -1,11 +1,10 @@
 # IntegraFlow
 
-##  One-Line Summary
-A multi-protocol workflow orchestration engine that automates employee onboarding/offboarding by coordinating distributed REST and legacy SOAP vendor systems with transactional state tracking and audit logging.
+A workflow orchestration engine that automates employee onboarding and offboarding across distributed REST APIs and legacy SOAP services with transactional state tracking and audit logging.
 
 ---
 
-##  Architecture
+## Architecture
 
 ```
                           ┌───────────────────────────┐
@@ -42,76 +41,54 @@ A multi-protocol workflow orchestration engine that automates employee onboardin
 
 ---
 
-##  Key Features
+## Key Highlights
 
-- **Multi-Protocol Orchestration:** Coordinates modern REST/JSON microservices and legacy SOAP 1.1/XML endpoints within a unified execution pipeline.
-- **Sequential Step Engine:** Enforces ordered execution (`Identity` $\rightarrow$ `Ticketing` $\rightarrow$ `Legacy HR`) with deterministic state progression (`PENDING` $\rightarrow$ `SUCCESS` / `FAILED`).
-- **Fail-Safe Circuitry:** Automatically halts downstream execution upon intermediate step failure, transitioning the workflow to `FAILED_NEEDS_MANUAL_REVIEW` to prevent state corruption.
-- **Append-Only Audit Trail:** Persists immutable transaction logs, timestamps, and vendor IDs (`IDN-*`, `TCK-*`, `SOAP-*`) in PostgreSQL for enterprise compliance.
-- **Live State Visibility:** Real-time frontend polling interface displaying step-by-step progress and execution health.
-
----
-
-##  Why This Project Stands Out
-
-
-
-- **Multi-Protocol Integration (REST + SOAP):** Real enterprise environments are hybrid. IntegraFlow connects modern REST APIs with legacy SOAP/WSDL services using custom adapters and strict schema contracts.
-- **Workflow State Machine (Not Just Endpoints):** Implements a resilient step-execution engine that manages state transitions, step dependencies, and lifecycle events across distributed boundaries.
-- **Enterprise Fault Tolerance:** Prevents partial execution states by enforcing immediate halt-on-failure semantics rather than blindly proceeding with downstream side effects.
-- **Clean Architecture & Separation of Concerns:** Core orchestration logic depends on abstract step interfaces and domain entities, completely decoupled from vendor transport layers.
+- **Multi-Protocol Integration:** Connects modern REST endpoints (Identity, Ticketing) and legacy SOAP/WSDL XML services (HRIS) within a unified pipeline.
+- **Deterministic State Engine:** Executes steps sequentially (`PENDING` $\rightarrow$ `SUCCESS` / `FAILED`) and tracks lifecycle transitions in PostgreSQL.
+- **Fail-Safe Halting:** Halts execution immediately if an intermediate step fails, marking the workflow as `FAILED_NEEDS_MANUAL_REVIEW` to prevent corrupted state.
+- **Immutable Audit Trail:** Logs every execution event, timestamp, and vendor transaction ID (`IDN-*`, `TCK-*`, `SOAP-*`) for compliance tracking.
+- **Decoupled Architecture:** Core engine communicates through abstract step interfaces and vendor adapters, isolating downstream protocol changes.
 
 ---
 
-##  Tech Stack
+## Tech Stack
 
-- **Backend:** Python 3.11, FastAPI, SQLAlchemy 2.0, Pydantic v2
-- **Integrations:** Zeep (SOAP Client), Spyne (SOAP Server / WSDL), HTTPX (REST Client)
-- **Database:** PostgreSQL 16
-- **Frontend:** React 18, Vite
-- **Testing:** Pytest, unittest.mock, FastAPI TestClient
-- **Infrastructure:** Docker, Docker Compose
+| Layer | Technologies |
+| :--- | :--- |
+| **Backend** | Python 3.11, FastAPI, SQLAlchemy 2.0, Pydantic v2 |
+| **Integrations** | Zeep (SOAP Client), Spyne (SOAP Server / WSDL), HTTPX (REST Client) |
+| **Database** | PostgreSQL 16 |
+| **Frontend** | React 18, Vite |
+| **Testing** | Pytest, unittest.mock, FastAPI TestClient |
+| **Infrastructure** | Docker, Docker Compose |
 
 ---
 
-##  Running Locally
+## Running Locally
 
-### 1. Start All Services (Database + Backend + 3 Mock Vendors)
+### 1. Start Services
 ```bash
 docker compose up -d
 ```
+Starts PostgreSQL (`5432`), Backend (`8080`), Identity (`8082`), Ticketing (`8083`), and Legacy HR SOAP (`8081`).
 
-### 2. Run Test Suite
+### 2. Run Tests
 ```bash
 docker run --rm -v "${PWD}/backend:/app" -w /app python:3.11-slim sh -c "pip install --no-cache-dir -r requirements.txt > /dev/null && pytest -v"
 ```
 
-### 3. Launch Frontend UI
+### 3. Start Frontend
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Access the application at `http://localhost:5173` (Backend at `http://localhost:8080`).
+UI runs on `http://localhost:5173`.
 
 ---
 
-##  Testing
+## Design Decisions
 
-Includes a unit test suite built with **Pytest** and **FastAPI TestClient** covering workflow engine completion, halt-on-failure branching, step ordering, REST adapter error handling, and API status codes.
-
----
-
-##  Design Decisions
-
-- **Sequential Execution over Queues:** Prioritized deterministic execution, transparent state transitions, and straightforward debugging over the operational overhead of message brokers for small step pipelines.
-- **Adapter Design Pattern:** Isolated third-party protocol logic inside `IdentityRestAdapter`, `TicketingRestAdapter`, and `LegacyHrSoapAdapter`, allowing live enterprise vendor swaps without touching the core engine.
-- **Explicit Halt-on-Failure:** Chose fail-safe manual review transitions over blind auto-retries to avoid duplicate side effects in external vendor systems.
-
----
-
-##  Out of Scope
-
-- Distributed message streaming (Kafka / RabbitMQ)
-- Production authentication / OAuth2 SSO
-- Automated retry policies and distributed locking
+- **Sequential Execution over Queues:** Kept orchestration synchronous and deterministic to simplify state tracking and failure debugging for fixed 3-step pipelines.
+- **Adapter Pattern:** Isolated network and protocol specifics within dedicated adapter classes, allowing live vendor swaps without modifying workflow engine logic.
+- **Halt-on-Failure:** Prioritized explicit manual review states over automated retries to avoid duplicating side effects in downstream vendor systems.
