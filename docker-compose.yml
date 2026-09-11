@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: integraflow-postgres
+    environment:
+      POSTGRES_DB: integraflow_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d integraflow_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - integraflow-network
+
+  identity-service:
+    build:
+      context: ./mock-vendors/identity-service
+      dockerfile: Dockerfile
+    container_name: integraflow-identity-mock
+    ports:
+      - "8082:8082"
+    networks:
+      - integraflow-network
+
+  ticketing-service:
+    build:
+      context: ./mock-vendors/ticketing-service
+      dockerfile: Dockerfile
+    container_name: integraflow-ticketing-mock
+    ports:
+      - "8083:8083"
+    networks:
+      - integraflow-network
+
+  legacy-hr-soap-service:
+    build:
+      context: ./mock-vendors/legacy-hr-soap-service
+      dockerfile: Dockerfile
+    container_name: integraflow-soap-mock
+    ports:
+      - "8081:8081"
+    networks:
+      - integraflow-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: integraflow-backend
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/integraflow_db
+      IDENTITY_SERVICE_URL: http://identity-service:8082
+      TICKETING_SERVICE_URL: http://ticketing-service:8083
+      LEGACY_HR_SOAP_URL: http://legacy-hr-soap-service:8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+      identity-service:
+        condition: service_started
+      ticketing-service:
+        condition: service_started
+      legacy-hr-soap-service:
+        condition: service_started
+    networks:
+      - integraflow-network
+
+volumes:
+  postgres_data:
+
+networks:
+  integraflow-network:
+    driver: bridge
